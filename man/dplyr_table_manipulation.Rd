@@ -16,6 +16,7 @@
 \alias{ungroup.zoomed_dm}
 \alias{summarise.zoomed_dm}
 \alias{summarise.dm_keyed_tbl}
+\alias{dplyr_reconstruct.dm_keed_tbl}
 \alias{count.zoomed_dm}
 \alias{tally.zoomed_dm}
 \alias{pull.zoomed_dm}
@@ -50,6 +51,8 @@
 
 \method{summarise}{dm_keyed_tbl}(.data, ...)
 
+\method{dplyr_reconstruct}{dm_keed_tbl}(data, template, ...)
+
 \method{count}{zoomed_dm}(
   x,
   ...,
@@ -81,6 +84,10 @@ By default, the value is \code{NULL}, which causes the function to issue a messa
 This argument is specific for the \code{slice.zoomed_dm()} method.}
 
 \item{x}{For \code{ungroup.zoomed_dm}: object of class \code{zoomed_dm}}
+
+\item{data}{A data frame, data frame extension (e.g. a tibble), or a
+lazy data frame (e.g. from dbplyr or dtplyr). See \emph{Methods}, below, for
+more details.}
 
 \item{wt}{<\code{\link[dplyr:dplyr_data_masking]{data-masking}}> Frequency weights.
 Can be \code{NULL} or a variable:

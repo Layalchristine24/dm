@@ -310,6 +310,15 @@ summarise.dm_keyed_tbl <- function(.data, ...) {
   )
 }
 
+#' @rdname dplyr_table_manipulation
+#' @export
+dplyr_reconstruct.dm_keed_tbl <- function(data, template, ...) {
+  out <- NextMethod()
+
+  # Keep keyed information from output
+  new_keyed_tbl_from_keys_info(out, keyed_get_info(data))
+}
+
 #' @export
 count.dm <- function(x, ...) {
   check_zoomed(x)
