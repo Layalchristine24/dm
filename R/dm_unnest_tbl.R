@@ -155,13 +155,13 @@ guess_fks <- function(parent_table, child_table, parent_pk_names) {
       ungroup()
   })
   for (i in seq_len(nrow(combos_df))) {
-    combo <- unname(unlist(combos_df[i,]))
+    combo <- unname(unlist(combos_df[i, ]))
     combo_is_subset <-
       nrow(child_table) ==
-      child_table[combo] %>%
-      set_names(parent_pk_names) %>%
-      semi_join(parent_table[parent_pk_names], by = parent_pk_names) %>%
-      nrow()
+        child_table[combo] %>%
+          set_names(parent_pk_names) %>%
+          semi_join(parent_table[parent_pk_names], by = parent_pk_names) %>%
+          nrow()
     if (combo_is_subset) break
   }
   combo
