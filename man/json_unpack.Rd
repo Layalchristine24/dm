@@ -10,7 +10,7 @@ json_unpack(data, cols, names_sep = NULL, names_repair = "check_unique")
 \item{data}{A data frame, a data frame extension (e.g. a tibble), or  a lazy
 data frame (e.g. from dbplyr or dtplyr).}
 
-\item{cols}{<\code{\link[tidyr:tidyr_tidy_select]{tidy-select}}> Column to unpack.}
+\item{cols}{<\code{\link[tidyr:tidyr_tidy_select]{tidy-select}}> Columns to unpack.}
 
 \item{names_sep}{If \code{NULL}, the default, the names will be left
 as is. In \code{pack()}, inner names will come from the former outer names;
@@ -26,10 +26,10 @@ packing and unpacking.}
 \item{names_repair}{Used to check that output data frame has valid
 names. Must be one of the following options:
 \itemize{
-\item "minimal": no name repair or checks, beyond basic existence,
-\item "unique": make sure names are unique and not empty,
-\item "check_unique": (the default), no name repair, but check they are unique,
-\item "universal": make the names unique and syntactic
+\item \verb{"minimal}": no name repair or checks, beyond basic existence,
+\item \verb{"unique}": make sure names are unique and not empty,
+\item \verb{"check_unique}": (the default), no name repair, but check they are unique,
+\item \verb{"universal}": make the names unique and syntactic
 \item a function: apply custom name repair.
 \item \link[tidyr]{tidyr_legacy}: use the name repair from tidyr 0.8.
 \item a formula: a purrr-style anonymous function (see \code{\link[rlang:as_function]{rlang::as_function()}})

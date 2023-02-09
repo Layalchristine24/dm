@@ -10,30 +10,22 @@ json_unnest(data, cols, names_sep = NULL, names_repair = "check_unique")
 \item{data}{A data frame, a data frame extension (e.g. a tibble), or  a lazy
 data frame (e.g. from dbplyr or dtplyr).}
 
-\item{cols}{<\code{\link[tidyr:tidyr_tidy_select]{tidy-select}}> Columns to unnest.
+\item{cols}{<\code{\link[tidyr:tidyr_tidy_select]{tidy-select}}> List-columns to unnest.
 
-If you \code{unnest()} multiple columns, parallel entries must be of
-compatible sizes, i.e. they're either equal or length 1 (following the
-standard tidyverse recycling rules).}
+When selecting multiple columns, values from the same row will be recycled
+to their common size.}
 
-\item{names_sep}{If \code{NULL}, the default, the names will be left
-as is. In \code{nest()}, inner names will come from the former outer names;
-in \code{unnest()}, the new outer names will come from the inner names.
-
-If a string, the inner and outer names will be used together. In
-\code{unnest()}, the names of the new outer columns will be formed by pasting
-together the outer and the inner column names, separated by \code{names_sep}. In
-\code{nest()}, the new inner names will have the outer names + \code{names_sep}
-automatically stripped. This makes \code{names_sep} roughly symmetric between
-nesting and unnesting.}
+\item{names_sep}{If \code{NULL}, the default, the outer names will come from the
+inner names. If a string, the outer names will be formed by pasting
+together the outer and the inner column names, separated by \code{names_sep}.}
 
 \item{names_repair}{Used to check that output data frame has valid
 names. Must be one of the following options:
 \itemize{
-\item "minimal": no name repair or checks, beyond basic existence,
-\item "unique": make sure names are unique and not empty,
-\item "check_unique": (the default), no name repair, but check they are unique,
-\item "universal": make the names unique and syntactic
+\item \verb{"minimal}": no name repair or checks, beyond basic existence,
+\item \verb{"unique}": make sure names are unique and not empty,
+\item \verb{"check_unique}": (the default), no name repair, but check they are unique,
+\item \verb{"universal}": make the names unique and syntactic
 \item a function: apply custom name repair.
 \item \link[tidyr]{tidyr_legacy}: use the name repair from tidyr 0.8.
 \item a formula: a purrr-style anonymous function (see \code{\link[rlang:as_function]{rlang::as_function()}})

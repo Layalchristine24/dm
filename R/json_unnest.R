@@ -1,4 +1,3 @@
-
 #' Unnest a JSON column
 #'
 #' @param data A data frame, a data frame extension (e.g. a tibble), or  a lazy
