@@ -1,20 +1,19 @@
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# [dm](https://cynkra.github.io/dm/)
+# [dm](https://dm.cynkra.com/)
 
 <!-- badges: start -->
 
-[![Lifecycle: maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html) [![R build status](https://github.com/cynkra/dm/workflows/tic/badge.svg)](https://github.com/cynkra/dm/actions) [![Codecov test coverage](https://codecov.io/gh/cynkra/dm/branch/master/graph/badge.svg)](https://app.codecov.io/gh/cynkra/dm?branch=master) [![CRAN status](https://www.r-pkg.org/badges/version/dm)](https://CRAN.R-project.org/package=dm) [![Launch rstudio.cloud](https://img.shields.io/badge/rstudio-cloud-blue.svg)](https://rstudio.cloud/project/523482)
-
+[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html) [![R build status](https://github.com/cynkra/dm/workflows/rcc/badge.svg)](https://github.com/cynkra/dm/actions) [![Codecov test coverage](https://codecov.io/gh/cynkra/dm/branch/master/graph/badge.svg)](https://app.codecov.io/gh/cynkra/dm?branch=master)
 <!-- badges: end -->
 
-## TL;DR
+[![CRAN status](https://www.r-pkg.org/badges/version/dm)](https://CRAN.R-project.org/package=dm) [![Launch posit.cloud](https://img.shields.io/badge/posit-cloud-blue.svg)](https://rstudio.cloud/project/523482)
 
-Are you using multiple data frames or database tables in R? Organize them with dm.
-
--   Use it for data analysis today.
--   Build data models tomorrow.
--   Deploy the data models to your organization’s RDBMS the day after.
+> Are you using multiple data frames or database tables in R? Organize them with dm.
+>
+> -   Use it for data analysis today.
+> -   Build data models tomorrow.
+> -   Deploy the data models to your organization’s Relational Database Management System (RDBMS) the day after.
 
 ## Overview
 
@@ -30,7 +29,7 @@ dm makes it easy to bring an existing relational data model into your R session.
 -   simpler joins that “know” how tables are related, including a “flatten” operation that automatically follows keys and performs column name disambiguation
 -   consistency and constraint checks to help you understand (and fix) the limitations of your data
 
-That’s just the tip of the iceberg. See [Getting started](https://cynkra.github.io/dm/articles/dm.html) to hit the ground running and explore all the features.
+That’s just the tip of the iceberg. See [Getting started](https://dm.cynkra.com/articles/dm.html) to hit the ground running and explore all the features.
 
 ## Installation
 
@@ -39,7 +38,20 @@ The latest stable version of the {dm} package can be obtained from [CRAN](https:
 <pre class='chroma'>
 <span class='nf'><a href='https://rdrr.io/r/utils/install.packages.html'>install.packages</a></span><span class='o'>(</span><span class='s'>"dm"</span><span class='o'>)</span></pre>
 
-The latest development version of {dm} can be installed from GitHub.
+The latest development version of {dm} can be installed from R-universe:
+
+<pre class='chroma'>
+<span class='c'># Enable repository from cynkra</span>
+<span class='nf'><a href='https://rdrr.io/r/base/options.html'>options</a></span><span class='o'>(</span>
+  repos <span class='o'>=</span> <span class='nf'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='o'>(</span>
+    cynkra <span class='o'>=</span> <span class='s'>"https://cynkra.r-universe.dev"</span>,
+    CRAN <span class='o'>=</span> <span class='s'>"https://cloud.r-project.org"</span>
+  <span class='o'>)</span>
+<span class='o'>)</span>
+<span class='c'># Download and install dm in R</span>
+<span class='nf'><a href='https://rdrr.io/r/utils/install.packages.html'>install.packages</a></span><span class='o'>(</span><span class='s'>'dm'</span><span class='o'>)</span></pre>
+
+or from GitHub:
 
 <pre class='chroma'>
 <span class='c'># install.packages("devtools")</span>
@@ -47,11 +59,11 @@ The latest development version of {dm} can be installed from GitHub.
 
 ## Usage
 
-Create a dm object (see [Getting started](https://cynkra.github.io/dm/articles/dm.html) for details).
+Create a dm object (see [Getting started](https://dm.cynkra.com/articles/dm.html) for details).
 
 <pre class='chroma'>
-<span class='kr'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='o'>(</span><span class='nv'><a href='https://cynkra.github.io/dm/'>dm</a></span><span class='o'>)</span>
-<span class='nv'>dm</span> <span class='o'>&lt;-</span> <span class='nf'><a href='https://cynkra.github.io/dm/reference/dm_nycflights13.html'>dm_nycflights13</a></span><span class='o'>(</span><span class='o'>)</span>
+<span class='kr'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='o'>(</span><span class='nv'><a href='https://dm.cynkra.com/'>dm</a></span><span class='o'>)</span>
+<span class='nv'>dm</span> <span class='o'>&lt;-</span> <span class='nf'><a href='https://dm.cynkra.com/reference/dm_nycflights13.html'>dm_nycflights13</a></span><span class='o'>(</span><span class='o'>)</span>
 <span class='nv'>dm</span>
 <span class='c'>#&gt; <span style='color: #FFAFFF;'>──</span> <span style='color: #FFAFFF;'>Metadata</span> <span style='color: #FFAFFF;'>────────────────────────────────────────────────────────────────────</span></span>
 <span class='c'>#&gt; Tables: `airlines`, `airports`, `flights`, `planes`, `weather`</span>
@@ -79,14 +91,14 @@ Visualize relationships at any time:
 
 <pre class='chroma'>
 <span class='nv'>dm</span> <span class='o'><a href='https://magrittr.tidyverse.org/reference/pipe.html'>%&gt;%</a></span>
-  <span class='nf'><a href='https://cynkra.github.io/dm/reference/dm_draw.html'>dm_draw</a></span><span class='o'>(</span><span class='o'>)</span></pre>
+  <span class='nf'><a href='https://dm.cynkra.com/reference/dm_draw.html'>dm_draw</a></span><span class='o'>(</span><span class='o'>)</span></pre>
 <img src="man/figures/README-draw.svg" />
 
 Simple joins:
 
 <pre class='chroma'>
 <span class='nv'>dm</span> <span class='o'><a href='https://magrittr.tidyverse.org/reference/pipe.html'>%&gt;%</a></span>
-  <span class='nf'><a href='https://cynkra.github.io/dm/reference/dm_flatten_to_tbl.html'>dm_flatten_to_tbl</a></span><span class='o'>(</span><span class='nv'>flights</span><span class='o'>)</span>
+  <span class='nf'><a href='https://dm.cynkra.com/reference/dm_flatten_to_tbl.html'>dm_flatten_to_tbl</a></span><span class='o'>(</span><span class='nv'>flights</span><span class='o'>)</span>
 <span class='c'>#&gt; Renaming ambiguous columns: %&gt;%</span>
 <span class='c'>#&gt;   dm_rename(flights, flights.year = year) %&gt;%</span>
 <span class='c'>#&gt;   dm_rename(flights, flights.month = month) %&gt;%</span>
@@ -124,11 +136,11 @@ Check consistency:
 
 <pre class='chroma'>
 <span class='nv'>dm</span> <span class='o'><a href='https://magrittr.tidyverse.org/reference/pipe.html'>%&gt;%</a></span>
-  <span class='nf'><a href='https://cynkra.github.io/dm/reference/dm_examine_constraints.html'>dm_examine_constraints</a></span><span class='o'>(</span><span class='o'>)</span>
+  <span class='nf'><a href='https://dm.cynkra.com/reference/dm_examine_constraints.html'>dm_examine_constraints</a></span><span class='o'>(</span><span class='o'>)</span>
 <span class='c'>#&gt; <span style='color: #BBBB00;'>!</span> Unsatisfied constraints:</span>
 <span class='c'>#&gt; <span style='color: #BB0000;'>•</span> Table `flights`: foreign key `tailnum` into table `planes`: values of `flights$tailnum` not in `planes$tailnum`: N725MQ (6), N537MQ (5), N722MQ (5), N730MQ (5), N736MQ (5), …</span></pre>
 
-Learn more in the [Getting started](https://cynkra.github.io/dm/articles/dm.html) article.
+Learn more in the [Getting started](https://dm.cynkra.com/articles/dm.html) article.
 
 ## Getting help
 
@@ -144,4 +156,4 @@ Funded by:
 
 ------------------------------------------------------------------------
 
-Please note that the ‘dm’ project is released with a [Contributor Code of Conduct](https://cynkra.github.io/dm/CODE_OF_CONDUCT.html). By contributing to this project, you agree to abide by its terms.
+Please note that the ‘dm’ project is released with a [Contributor Code of Conduct](https://dm.cynkra.com/CODE_OF_CONDUCT.html). By contributing to this project, you agree to abide by its terms.

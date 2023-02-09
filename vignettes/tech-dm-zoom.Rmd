@@ -14,20 +14,22 @@ source("setup/setup.R")
 This vignette deals with situations where you want to transform tables of your `dm` and then update an existing table or add a new table to the `dm`.
 There are two straightforward approaches:
 
-1. individually extract the tables relevant to the calculation, perform the necessary transformations, add the result to the `dm` (or replace an existing table) and establish the key relations.
+1. extract the tables relevant to the calculation, perform the necessary transformations, and (if needed) recombine the resulting table into a `dm`,
 1. do all this within the `dm` object by zooming to a table and manipulating it while maintaining the key relations whenever possible.
 
-The first approach is rather self-explanatory, so let us have a closer look at the second way.
+Both approaches aim at maintaining the key relations whenever possible.
+We will explore the second approach here. 
+For the first approach, see `vignette("tech-dm-zoom")`.
 
 ## Enabling {dplyr}-workflow within a `dm`
 
 "Zooming" to a table of a `dm` means:
 
 - all information stored in the original `dm` is kept, including the originally zoomed table
-- an object of class `zoomed_dm` is produced, presenting a view of the table for transformations
+- an object of class `dm_zoomed` is produced, presenting a view of the table for transformations
 - you do not need to specify the table when calling `select()`, `mutate()` and other table manipulation functions
 
-{dm} provides methods for many of the {dplyr}-verbs for a `zoomed_dm` which behave the way you are used to, affecting only the zoomed table and leaving the rest of the `dm` untouched.
+{dm} provides methods for many of the {dplyr}-verbs for a `dm_zoomed` which behave the way you are used to, affecting only the zoomed table and leaving the rest of the `dm` untouched.
 When you are finished with transforming the table, there are three options to proceed:
 
 1. use `dm_update_zoomed()` if you want to replace the originally zoomed table with the new table
@@ -55,7 +57,7 @@ flights_dm
 flights_zoomed <-
   flights_dm %>%
   dm_zoom_to(flights)
-# The print output for a `zoomed_dm` looks very much like that from a normal `tibble`.
+# The print output for a `dm_zoomed` looks very much like that from a normal `tibble`.
 flights_zoomed
 
 flights_zoomed_mutate <-
@@ -63,6 +65,7 @@ flights_zoomed_mutate <-
   mutate(am_pm_dep = if_else(dep_time < 1200, "am", "pm")) %>%
   # in order to see our changes in the output we use `select()` for reordering the columns
   select(year:dep_time, am_pm_dep, everything())
+
 flights_zoomed_mutate
 
 # To update the original `dm` with a new `flights` table we use `dm_update_zoomed()`:
@@ -77,11 +80,12 @@ dm_draw(updated_flights_dm)
 
 ### Use case 2: Creation of a surrogate key
 
-The same course of action could, for example, be employed to create a surrogate key for a table.
+The same course of action could, for example, be employed to create a surrogate key for a table, a synthetic simple key that replaces a compound key.
 We can do this for the `weather` table.
 
 ```{r}
 library(tidyr)
+
 weather_zoomed <-
   flights_dm %>%
   dm_zoom_to(weather)
@@ -126,8 +130,11 @@ One column stands for the departure airport and the other for the arrival airpor
 ```{r}
 dm_draw(dm_nycflights13(cycle = TRUE))
 ```
-In such cases it can be beneficial, to "disentangle" the `dm` by duplicating the referred table.
+
+This generates a cycle which leads to failures with many operations that only work on cycle-free data models, such as `dm_flatten_to_tbl()`, `dm_filter()` or `dm_wrap_to_tbl()`.
+In such cases, it can be beneficial to "disentangle" the `dm` by duplicating the referred table.
 One way to do this in the {dm}-framework is as follows:
+
 ```{r}
 disentangled_flights_dm <-
   dm_nycflights13(cycle = TRUE) %>%
@@ -143,7 +150,7 @@ disentangled_flights_dm <-
 dm_draw(disentangled_flights_dm)
 ```
 
-In a future update we will provide a more convenient way to "disentangle" `dm` objects, so that the individual steps will be done automatically.
+In a future update, we will provide a more convenient way to "disentangle" `dm` objects, so that the individual steps will be done automatically.
 
 ### Use case 4: Add summary table to `dm`
 
@@ -160,7 +167,7 @@ dm_draw(dm_with_summary)
 
 ### Use case 5: Joining tables
 
-If you would like to join some or all of the columns of one table to another, you can make use of one of the `join`-methods for a `zoomed_dm`.
+If you would like to join some or all of the columns of one table to another, you can make use of one of the `join`-methods for a `dm_zoomed`.
 In addition to the usual arguments for the {dplyr}-joins, by supplying the `select` argument you can specify which columns of the RHS-table you want to be included in the join.
 For the syntax please see the example below.
 The LHS-table of a join is always the zoomed table.
@@ -182,7 +189,7 @@ dm_draw(joined_flights_dm)
 
 ### Tip: Accessing the zoomed table
 
-At each point you can retrieve the zoomed table by calling `pull_tbl()` on a `zoomed_dm`.
+At each point, you can retrieve the zoomed table by calling `pull_tbl()` on a `dm_zoomed`.
 To use our last example once more:
 
 ```{r}
@@ -195,18 +202,18 @@ flights_dm %>%
 
 ### Possible pitfalls and caveats
 
-1. Currently not all of the {dplyr}-verbs have their own method for a `zoomed_dm`, so be aware that in some cases it will still be necessary to resort to extracting one or more tables from a `dm` and reinserting a transformed version of theirs into the `dm` eventually.
+1. Currently, not all {dplyr}-verbs have their own method for a `dm_zoomed` object, so be aware that in some cases it will still be necessary to resort to extracting one or more tables from a `dm` and reinserting a transformed version back into the `dm` object.
 The supported functions are:
-`group_by()`, `ungroup()`, `summarise()`, `mutate()`, `transmute()`, `filter()`, `select()`, `relocate()`, `rename()`, `distinct()`, `arrange()`, `slice()`, `left_join()`, `inner_join()`, `full_join()`, `right_join()`, `semi_join()` and `anti_join()`.
+`group_by()`, `ungroup()`, `summarise()`, `mutate()`, `transmute()`, `filter()`, `select()`, `relocate()`, `rename()`, `distinct()`, `arrange()`, `slice()`, `left_join()`, `inner_join()`, `full_join()`, `right_join()`, `semi_join()`, and `anti_join()`.
 
 1. The same is true for {tidyr}-functions.
 Methods are provided for: `unite()` and `separate()`.
 
 1. There might be situations when you would like the key relations to remain intact, but they are dropped nevertheless.
 This is because a rigid logic is implemented, that does drop a key when its associated column is acted upon with e.g. a `mutate()` call.
-In these cases the key relations will need to be established once more after finishing with the manipulations.
+In these cases, the key relations will need to be re-established after finishing with the manipulations.
 
-1. For each implemented {dplyr}-verb there is a logic for tracking key relations between the tables.
+1. For each implemented {dplyr}-verb, there is a logic for tracking key relations between the tables.
 Up to {dm} version 0.2.4 we tried to track the columns in a very detailed manner. This has become increasingly difficult, especially with `dplyr::across()`. As of {dm} 0.2.5, we give more responsibility to the {dm} user:
 Now those columns are tracked whose **names** remain in the resulting table.
 Affected by these changes are the methods for: `mutate()`, `transmute()`, `distinct()`.

@@ -1,4 +1,3 @@
-
 build_copy_queries <- function(dest, dm, set_key_constraints = TRUE, temporary = TRUE, table_names = set_names(names(dm))) {
   con <- con_from_src_or_con(dest)
 
@@ -22,9 +21,72 @@ build_copy_queries <- function(dest, dm, set_key_constraints = TRUE, temporary =
 
   # column definitions
   get_sql_col_types <- function(x) {
+    # autoincrementing is not possible for composite keys, so `pk_col` is guaranteed
+    # to be a scalar
+    pk_col <-
+      dm %>%
+      dm_get_all_pks(!!x) %>%
+      filter(autoincrement) %>%
+      pull(pk_col)
+
     tbl <- tbl_impl(dm, x)
     types <- DBI::dbDataType(con, tbl)
-    enframe(types, "col", "type")
+    autoincrement_attribute <- ""
+
+    # database-specific type conversions
+    if (is_mariadb(dest)) {
+      types[types == "TEXT"] <- "VARCHAR(255)"
+    }
+    if (is_sqlite(dest)) {
+      types[types == "INT"] <- "INTEGER"
+    }
+
+    # database-specific autoincrementing column types
+    if (length(pk_col) > 0L) {
+      # extract column name representing primary key
+      pk_col <- pk_col %>% extract2(1L)
+
+      # Postgres:
+      if (is_postgres(dest)) {
+        types[pk_col] <- "SERIAL"
+      }
+
+      # SQL Server:
+      if (is_mssql(dest)) {
+        types[pk_col] <- "INT IDENTITY"
+      }
+
+      # MariaDB:
+      # Doesn't have a special data type. Uses `AUTO_INCREMENT` attribute instead.
+      # Ref: https://mariadb.com/kb/en/auto_increment/
+      if (is_mariadb(dest)) {
+        autoincrement_attribute <- " AUTO_INCREMENT"
+      }
+
+      # DuckDB:
+      # Doesn't have a special data type. Uses `CREATE SEQUENCE` instead.
+      # Ref: https://duckdb.org/docs/sql/statements/create_sequence
+
+      # SQLite:
+      # For a primary key, autoincrementing works by default, and it is almost never
+      # necessary to use the `AUTOINCREMENT` keyword. So nothing we need to do here.
+      # Ref: https://www.sqlite.org/autoinc.html
+    }
+    df_col_types <-
+      enframe(types, "col", "type") %>%
+      mutate(autoincrement_attribute = "")
+
+    if (length(pk_col) > 0L) {
+      df_col_types <-
+        df_col_types %>%
+        mutate(autoincrement_attribute = if_else(
+          col == pk_col,
+          !!autoincrement_attribute,
+          autoincrement_attribute
+        ))
+    }
+
+    df_col_types
   }
 
   col_defs <-
@@ -32,7 +94,7 @@ build_copy_queries <- function(dest, dm, set_key_constraints = TRUE, temporary =
     src_tbls_impl() %>%
     set_names() %>%
     map_dfr(get_sql_col_types, .id = "name") %>%
-    mutate(col_def = glue("{DBI::dbQuoteIdentifier(con, col)} {type}")) %>%
+    mutate(col_def = glue("{DBI::dbQuoteIdentifier(con, col)} {type}{autoincrement_attribute}")) %>%
     group_by(name) %>%
     summarize(
       col_defs = paste(col_def, collapse = ",\n  "),
@@ -73,9 +135,14 @@ build_copy_queries <- function(dest, dm, set_key_constraints = TRUE, temporary =
       summarize(unique_defs = paste(unique_def, collapse = ",\n  "))
 
     # foreign key definitions and indexing queries
-    if (is_duckdb(con)) {
+    # https://github.com/r-lib/rlang/issues/1422
+    if (is_duckdb(con) && package_version(asNamespace("duckdb")$.__NAMESPACE__.$spec[["version"]]) < "0.3.4.1") {
       if (nrow(fks)) {
         warn("duckdb doesn't support foreign keys, these won't be set in the remote database but are preserved in the `dm`")
+      }
+    } else if (is_mariadb(con) && temporary) {
+      if (nrow(fks) > 0 && !is_testing()) {
+        warn("MySQL and MariaDB don't support foreign keys for temporary tables, these won't be set in the remote database but are preserved in the `dm`")
       }
     } else {
       fk_defs <-
@@ -119,6 +186,7 @@ build_copy_queries <- function(dest, dm, set_key_constraints = TRUE, temporary =
         )
     }
   }
+
   ## compile `CREATE TABLE ...` queries
   create_table_queries <-
     col_defs %>%
@@ -138,7 +206,7 @@ build_copy_queries <- function(dest, dm, set_key_constraints = TRUE, temporary =
     ) %>%
     ungroup() %>%
     transmute(name, remote_name, columns, sql_table = DBI::SQL(glue(
-      "CREATE {if (temporary) 'TEMP ' else ''}TABLE {unlist(remote_name)} (\n  {all_defs}\n)"
+      "CREATE {if (temporary) 'TEMPORARY ' else ''}TABLE {unlist(remote_name)} (\n  {all_defs}\n)"
     )))
 
   queries <- left_join(create_table_queries, index_queries, by = "name")

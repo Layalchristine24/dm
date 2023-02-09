@@ -1,14 +1,23 @@
 #' Validator
 #'
-#' `validate_dm()` checks the internal consistency of a `dm` object.
+#' `dm_validate()` checks the internal consistency of a `dm` object.
+#'
+#' In theory, with the exception of [new_dm()], all `dm` objects
+#' created or modified by functions in this package should be valid,
+#' and this function should not be needed.
+#' Please file an issue if any dm operation creates an invalid object.
 #'
 #' @param x An object.
 #'
-#' @return For `validate_dm()`: Returns the `dm`, invisibly, after finishing all checks.
+#' @return Returns the `dm`, invisibly, after finishing all checks.
 #'
-#' @rdname dm
 #' @export
-validate_dm <- function(x) {
+#' @examples
+#' dm_validate(dm())
+#'
+#' bad_dm <- structure(list(bad = "dm"), class = "dm")
+#' try(dm_validate(bad_dm))
+dm_validate <- function(x) {
   check_dm(x)
 
   if (!identical(names(unclass(x)), "def")) {
@@ -17,14 +26,14 @@ validate_dm <- function(x) {
 
   def <- dm_get_def(x)
 
-  boilerplate <- dm_get_def(new_dm2(validate = FALSE))
+  boilerplate <- new_dm_def()
 
   table_names <- def$table
   if (any(table_names == "")) abort_dm_invalid("Not all tables are named.")
 
   check_df_structure(def, boilerplate, "dm definition")
 
-  if (!all(map_lgl(def$data, ~ inherits(., "data.frame") || inherits(., "tbl_dbi")))) {
+  if (!all(map_lgl(def$data, ~ inherits(., "data.frame") || inherits(., "tbl_sql")))) {
     abort_dm_invalid(
       "Not all entries in `def$data` are of class `data.frame` or `tbl_dbi`. Check `dm_get_tables()`."
     )
@@ -55,6 +64,12 @@ validate_dm <- function(x) {
     select(table = ref_table, column = ref_column) %>%
     check_colnames(dm_col_names, "Parent key")
 
+  if (!all(map_int(def$pks, vctrs::vec_size) %in% 0:1)) {
+    abort_dm_invalid(
+      "Not all tables have maximally 1 primary key."
+    )
+  }
+
   pks <-
     def %>%
     select(table, pks) %>%
@@ -71,18 +86,42 @@ validate_dm <- function(x) {
     )
   }
 
+  uks <- def %>%
+    select(table, uks) %>%
+    unnest_list_of_df("uks")
+
+  uks %>%
+    unnest_col("column", character()) %>%
+    check_colnames(dm_col_names, "UK")
+
+  check_no_nulls(def)
+
   invisible(x)
 }
 
-debug_validate_dm <- function(dm) {
+#' Validator
+#'
+#' `validate_dm()` has been replaced by `dm_validate()` for consistency.
+#'
+#' @param x An object.
+#'
+#' @export
+#' @rdname deprecated
+#' @keywords internal
+validate_dm <- function(x) {
+  deprecate_soft("0.3.0", "dm::validate_dm()", "dm::dm_validate()")
+  dm_validate(x)
+}
+
+debug_dm_validate <- function(dm) {
   # Uncomment to enable validation for troubleshooting
-  # validate_dm(dm)
+  # dm_validate(dm)
   dm
 }
 
-check_dm <- function(dm) {
-  if (!is_dm(dm)) {
-    abort_is_not_dm(class(dm))
+check_dm <- function(x) {
+  if (!is_dm(x)) {
+    abort_is_not_dm(class(x))
   }
 }
 
@@ -123,21 +162,33 @@ check_one_zoom <- function(def, zoomed) {
       abort_dm_invalid("More than one table is zoomed.")
     }
     if (sum(!map_lgl(def$zoom, is_null)) < 1) {
-      abort_dm_invalid("Class is `zoomed_dm` but no zoomed table available.")
+      abort_dm_invalid("Class is `dm_zoomed` but no zoomed table available.")
     }
     if (sum(!map_lgl(def$col_tracker_zoom, is_null)) > 1) {
       abort_dm_invalid("Key tracking is active for more than one zoomed table.")
     }
     if (sum(!map_lgl(def$col_tracker_zoom, is_null)) < 1) {
-      abort_dm_invalid("No key tracking is active despite `dm` a `zoomed_dm`.")
+      abort_dm_invalid("No key tracking is active despite `dm` a `dm_zoomed`.")
     }
   } else {
     if (sum(!map_lgl(def$zoom, is_null)) != 0) {
-      abort_dm_invalid("Zoomed table(s) available despite `dm` not a `zoomed_dm`.")
+      abort_dm_invalid("Zoomed table(s) available despite `dm` not a `dm_zoomed`.")
     }
     if (sum(!map_lgl(def$col_tracker_zoom, is_null)) != 0) {
-      abort_dm_invalid("Key tracker for zoomed table activated despite `dm` not a `zoomed_dm`.")
+      abort_dm_invalid("Key tracker for zoomed table activated despite `dm` not a `dm_zoomed`.")
     }
+  }
+}
+
+check_no_nulls <- function(def) {
+  check_no_nulls_col(def$fks, "foreign keys")
+  check_no_nulls_col(def$pks, "primary keys")
+  check_no_nulls_col(def$filters, "filter conditions")
+}
+
+check_no_nulls_col <- function(x, where) {
+  if (any(map_lgl(x, is.null))) {
+    abort_dm_invalid(paste0("Found `NULL` entry in ", where, "."))
   }
 }
 
